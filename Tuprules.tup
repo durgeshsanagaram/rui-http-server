@@ -1,0 +1,6 @@
+LD_FLAGS += \$(pkg-config --libs gupnp-1.0 gssdp-1.0 gobject-2.0)
+VALA_FLAGS += --pkg=gupnp-1.0 -X -Wno-deprecated-declarations
+
+.gitignore
+
+!vala = |> valac -c %f $(VALA_FLAGS) |>
