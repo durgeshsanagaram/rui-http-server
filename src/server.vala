@@ -1,5 +1,6 @@
 using Gee;
 using GUPnP;
+using Soup;
 
 internal class RuiHttpServer {
     struct RemoteUI {
@@ -106,6 +107,28 @@ internal class RuiHttpServer {
             null);
     }
 
+    void handle_http_request(Server server, Message message, string path, HashTable? query, ClientContext context) {
+        string output = "<html><head><title>CableLabs RUI Server Service Discovery Server</title></head><body><ul>";
+        foreach (RemoteUI ui in remoteUis.values) {
+            output += "<li>";
+            if (ui.url != null) {
+                output += "<a href=\"" + ui.url + "\">";
+            }
+            if (ui.iconUrl != null) {
+                output += "<img src=\"" + ui.iconUrl + "\"/>";
+            }
+            if (ui.name != null) {
+                output += ui.name;
+            }
+            if (ui.url != null) {
+                output += "</a>";
+            }
+            output += "</li>";
+        }
+        output += "</ul></body></html>";
+        message.set_response("text/html", MemoryUse.COPY, output.data);
+    }
+
     void start() throws Error{
         Context context = new Context(null, null, 0);
 
@@ -114,6 +137,12 @@ internal class RuiHttpServer {
         control_point.set_active(true);
 
         stdout.printf("Starting DLNA Remote UI server service server on %s:%u\n", context.host_ip, context.port);
+
+        Server server = new Server(SERVER_PORT, 0, null);
+        server.add_handler(null, handle_http_request);
+        server.run_async();
+        stdout.printf("Starting HTTP server on  http://localhost:%u\n", server.port);
+
         MainLoop loop = new MainLoop();
         loop.run();
     }
