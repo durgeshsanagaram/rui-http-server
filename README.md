@@ -2,7 +2,7 @@
 
 On Ubuntu 14.04:
 
-    sudo apt-get install valac libgupnp-dev libgee-dev
+    sudo apt-get install valac libgupnp-dev libgee-dev libjson-glib-dev
 
     # tup build tool
     # see: http://gittup.org/tup/

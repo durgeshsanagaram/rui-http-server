@@ -88,7 +88,6 @@ internal class RuiHttpServer {
                             break;
                     }
                 }
-                stdout.printf("Discovered UI:\n  id: %s\n  name: %s\n  iconUrl: %s\n  url: %s\n", ui.id, ui.name, ui.iconUrl, ui.url);
                 remoteUis.set(ui.id, ui);
             }
 
@@ -107,26 +106,50 @@ internal class RuiHttpServer {
             null);
     }
 
-    void handle_http_request(Server server, Message message, string path, HashTable? query, ClientContext context) {
-        string output = "<html><head><title>CableLabs RUI Server Service Discovery Server</title></head><body><ul>";
+    void handle_rui_request(Server server, Message message, string path, HashTable? query, ClientContext context) {
+        Json.Builder builder = new Json.Builder();
+        builder.begin_array();
         foreach (RemoteUI ui in remoteUis.values) {
-            output += "<li>";
-            if (ui.url != null) {
-                output += "<a href=\"" + ui.url + "\">";
-            }
-            if (ui.iconUrl != null) {
-                output += "<img src=\"" + ui.iconUrl + "\"/>";
-            }
-            if (ui.name != null) {
-                output += ui.name;
-            }
-            if (ui.url != null) {
-                output += "</a>";
-            }
-            output += "</li>";
+            builder.begin_object();
+            builder.set_member_name("id");
+            builder.add_string_value(ui.id);
+            builder.set_member_name("name");
+            builder.add_string_value(ui.name);
+            builder.set_member_name("url");
+            builder.add_string_value(ui.url);
+            builder.set_member_name("iconUrl");
+            builder.add_string_value(ui.iconUrl);
+            builder.end_object();
         }
-        output += "</ul></body></html>";
-        message.set_response("text/html", MemoryUse.COPY, output.data);
+        builder.end_array();
+        
+        Json.Generator generator = new Json.Generator();
+        generator.set_pretty(true);
+        generator.set_root(builder.get_root());
+        string data = generator.to_data(null);
+        message.set_response("application/json", MemoryUse.COPY, data.data);
+    }
+    
+    void handle_static_file(Server server, Message message, string path, HashTable? query, ClientContext context) {
+        if (path == "/" || path == "") {
+            path = "index.html";
+        }
+        var file = File.new_for_path("static/" + path);
+        if (!file.query_exists()) {
+            message.set_status(404);
+            message.set_response("text/plain", MemoryUse.COPY, ("File " + file.get_path() + " does not exist.").data);
+            return;
+        }
+        try {
+            var io = file.read();
+            var info = file.query_info("*", FileQueryInfoFlags.NONE);
+            var data = io.read_bytes((size_t)info.get_size());
+            string content_type = info.get_content_type();
+            message.set_response(content_type, MemoryUse.COPY, data.get_data());
+        } catch (Error e) {
+            message.set_status(500);
+            message.set_response("text/plain", MemoryUse.COPY, e.message.data);
+        }
     }
 
     void start() throws Error{
@@ -139,7 +162,8 @@ internal class RuiHttpServer {
         stdout.printf("Starting DLNA Remote UI server service server on %s:%u\n", context.host_ip, context.port);
 
         Server server = new Server(SERVER_PORT, 0, null);
-        server.add_handler(null, handle_http_request);
+        server.add_handler(null, handle_static_file);
+        server.add_handler("/api/remote-uis", handle_rui_request);
         server.run_async();
         stdout.printf("Starting HTTP server on  http://localhost:%u\n", server.port);
 
