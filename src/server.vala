@@ -19,10 +19,6 @@ void service_proxy_available(ControlPoint control_point, ServiceProxy service) {
     }
 }
 
-void device_proxy_available(ControlPoint control_point, DeviceProxy device) {
-    stdout.printf("Device proxy available: %s, %s, %s\n", device.get_friendly_name(), device.location, device.device_type);
-}
-
 int main(string[] args) {
     Context context;
     try {
@@ -32,10 +28,8 @@ int main(string[] args) {
         return 1;
     }
 
-    ControlPoint control_point = new ControlPoint(context, "urn:schemas-upnp-org:service:
-RemoteUIServer:1");
+    ControlPoint control_point = new ControlPoint(context, "urn:schemas-upnp-org:service:RemoteUIServer:1");
     control_point.service_proxy_available.connect(service_proxy_available);
-    control_point.device_proxy_available.connect(device_proxy_available);
     control_point.set_active(true);
 
     stdout.printf("Starting DLNA Remote UI server service server on %s:%u\n", context.host_ip, context.port);
