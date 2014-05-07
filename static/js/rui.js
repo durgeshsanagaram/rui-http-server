@@ -36,7 +36,7 @@
     var badImages = {};
     
     function getRuis() {
-        $.get("api/remote-uis", function(data) {
+        $.getJSON("api/remote-uis", function(data) {
             var list = $("#rui-list");
             var newUis = {};
             for (var i = 0; i < data.length; ++i) {
