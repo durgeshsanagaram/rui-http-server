@@ -184,6 +184,7 @@ internal class RuiHttpServer {
         generator.set_pretty(true);
         generator.set_root(builder.get_root());
         string data = generator.to_data(null);
+        message.set_status(Soup.Status.OK);
         message.set_response("application/json", MemoryUse.COPY, data.data);
     }
     
@@ -204,6 +205,7 @@ internal class RuiHttpServer {
             var info = file.query_info("*", FileQueryInfoFlags.NONE);
             var data = io.read_bytes((size_t)info.get_size());
             string content_type = info.get_content_type();
+            message.set_status(Soup.Status.OK);
             message.set_response(content_type, MemoryUse.COPY,
                 data.get_data());
         } catch (Error e) {
