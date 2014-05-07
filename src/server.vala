@@ -201,7 +201,7 @@ internal class RuiHttpServer {
         server.add_handler(null, handle_static_file);
         server.add_handler("/api/remote-uis", handle_rui_request);
         server.run_async();
-        stdout.printf("Starting HTTP server on  http://localhost:%u\n",
+        stdout.printf("Starting HTTP server on http://localhost:%u\n",
             server.port);
 
         MainLoop loop = new MainLoop();
