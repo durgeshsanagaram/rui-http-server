@@ -28,3 +28,11 @@ The server output will say something like:
 > Starting HTTP server on http://localhost:37229
 
 Visit that page in your browser to see the discovered remote UIs.
+
+You can pick the port with the `-p` option:
+
+    ./server -p 8080
+
+> Starting UPnP server on 10.43.0.93:40418
+>
+> Starting HTTP server on http://localhost:8080

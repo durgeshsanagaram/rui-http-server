@@ -36,6 +36,17 @@ internal class RuiHttpServer {
         string? url;
     }
 
+    static int port = 0;
+    static bool debug = false;
+
+    static const OptionEntry[] options = {
+        { "port", 'p', 0, OptionArg.INT, ref port,
+            "The port to run the HTTP server on. By default, the server picks a random available port.", "[port]" },
+        { "debug", 'd', 0, OptionArg.NONE, ref debug,
+            "Print debug messages to the console", null },
+        { null }
+    };
+
     HashMap<string, RemoteUI?> remoteUis;
 
     RuiHttpServer() {
@@ -199,7 +210,7 @@ internal class RuiHttpServer {
             "Starting UPnP server on %s:%u\n",
             context.host_ip, context.port);
 
-        Server server = new Server(SERVER_PORT, 0, null);
+        Server server = new Server(SERVER_PORT, port, null);
         server.add_handler(null, handle_static_file);
         server.add_handler("/api/remote-uis", handle_rui_request);
         server.run_async();
@@ -211,6 +222,17 @@ internal class RuiHttpServer {
     }
 
     static int main(string[] args) {
+        try {
+            var opt_context = new OptionContext("RUI Discovery Server");
+            opt_context.set_help_enabled (true);
+            opt_context.add_main_entries (options, null);
+            opt_context.parse (ref args);
+        } catch (OptionError e) {
+            stderr.printf ("%s\n", e.message);
+            stderr.printf ("Run '%s --help' to see a full list of available command line options.\n",
+                args[0]);
+            return 2;
+        }
         try {
             RuiHttpServer server = new RuiHttpServer();
             server.start();
