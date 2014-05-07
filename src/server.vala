@@ -29,11 +29,11 @@ using Soup;
 
 internal class RuiHttpServer {
     struct RemoteUI {
-        string id;
-        string name;
-        string description;
-        string iconUrl;
-        string url;
+        string? id;
+        string? name;
+        string? description;
+        string? iconUrl;
+        string? url;
     }
 
     HashMap<string, RemoteUI?> remoteUis;
@@ -42,7 +42,20 @@ internal class RuiHttpServer {
         remoteUis = new HashMap<string, RemoteUI?>();
     }
 
-    void handle_compatible_uis(ServiceProxy service, ServiceProxyAction action) {
+    static string? get_url_from_xml(Xml.Node* node, Soup.URI base_url, string name) {
+        for (Xml.Node* child = node->children; child != null; child = child->next) {
+            if (child->name != name) {
+                continue;
+            }
+            string url = child->get_content();
+            url = new Soup.URI.with_base(base_url, url).to_string(false);
+            return url;
+        }
+        return null;
+    }
+
+    void handle_compatible_uis(ServiceProxy service,
+            ServiceProxyAction action) {
         try {
             string ui_listing;
             service.end_action(action,
@@ -50,6 +63,7 @@ internal class RuiHttpServer {
                 "UIListing", typeof(string), out ui_listing,
                 null);
             Xml.Doc* doc = Xml.Parser.parse_memory(ui_listing, ui_listing.length);
+            Soup.URI base_url = service.get_url_base();
             if (doc == null) {
                 stderr.printf("Got bad UI listing.\n");
                 return;
@@ -61,7 +75,8 @@ internal class RuiHttpServer {
                 return;
             }
             if (root->name != "uilist") {
-                stderr.printf("UI listing doesn't start with a <uilist> element\n");
+                stderr.printf(
+                    "UI listing doesn't start with a <uilist> element\n");
                 delete doc;
                 return;
             }
@@ -83,33 +98,21 @@ internal class RuiHttpServer {
                             break;
                         case "iconList":
                             // TODO: Pick the best icon instead of the first one
-                            bool found = false;
-                            for (Xml.Node* icon = child->children; !found && icon != null; icon = icon->next) {
+                            for (Xml.Node* icon = child->children; icon != null; icon = icon->next) {
                                 if (icon->name != "icon") {
                                     continue;
                                 }
-                                for (Xml.Node* ichild = icon->children; ichild != null; ichild = ichild->next) {
-                                    if (ichild->name == "url") {
-                                        ui.iconUrl = ichild->get_content();
-                                        if (ui.iconUrl != null & ui.iconUrl.length > 0 && ui.iconUrl[0] == '/') {
-                                            ui.iconUrl = new Soup.URI.with_base(service.get_url_base(), ui.iconUrl).to_string(false);
-                                        }
-                                        found = true;
-                                        break;
-                                    }
+                                ui.iconUrl = get_url_from_xml(icon, base_url,
+                                    "url");
+                                if (ui.iconUrl != null) {
+                                    break;
                                 }
                             }
                             break;
                         case "protocol":
                             // TODO: Make sure this has shortName="DLNA-HTML5-1.0" ?
-                            for (Xml.Node* pchild = child->children; pchild != null; pchild = pchild->next) {
-                                if (pchild->name == "uri") {
-                                    ui.url = pchild->get_content();
-                                    if (ui.url != null & ui.url.length > 0 && ui.url[0] == '/') {
-                                        ui.url = new Soup.URI.with_base(service.get_url_base(), ui.url).to_string(false);
-                                    }
-                                }
-                            }
+                            ui.url = get_url_from_xml(child, base_url,
+                                "uri");
                             break;
                     }
                 }
@@ -123,7 +126,8 @@ internal class RuiHttpServer {
         }
     }
 
-    void service_proxy_available(ControlPoint control_point, ServiceProxy service) {
+    void service_proxy_available(ControlPoint control_point,
+            ServiceProxy service) {
         service.begin_action("GetCompatibleUIs", handle_compatible_uis,
             /* in */
             "InputDeviceProfile", typeof(string), "",
@@ -131,7 +135,8 @@ internal class RuiHttpServer {
             null);
     }
 
-    void handle_rui_request(Server server, Message message, string path, HashTable? query, ClientContext context) {
+    void handle_rui_request(Server server, Message message, string path,
+            HashTable? query, ClientContext context) {
         Json.Builder builder = new Json.Builder();
         builder.begin_array();
         foreach (RemoteUI ui in remoteUis.values) {
@@ -155,14 +160,16 @@ internal class RuiHttpServer {
         message.set_response("application/json", MemoryUse.COPY, data.data);
     }
     
-    void handle_static_file(Server server, Message message, string path, HashTable? query, ClientContext context) {
+    void handle_static_file(Server server, Message message, string path,
+            HashTable? query, ClientContext context) {
         if (path == "/" || path == "") {
             path = "index.html";
         }
         var file = File.new_for_path("static/" + path);
         if (!file.query_exists()) {
             message.set_status(404);
-            message.set_response("text/plain", MemoryUse.COPY, ("File " + file.get_path() + " does not exist.").data);
+            message.set_response("text/plain", MemoryUse.COPY,
+                ("File " + file.get_path() + " does not exist.").data);
             return;
         }
         try {
@@ -170,7 +177,8 @@ internal class RuiHttpServer {
             var info = file.query_info("*", FileQueryInfoFlags.NONE);
             var data = io.read_bytes((size_t)info.get_size());
             string content_type = info.get_content_type();
-            message.set_response(content_type, MemoryUse.COPY, data.get_data());
+            message.set_response(content_type, MemoryUse.COPY,
+                data.get_data());
         } catch (Error e) {
             message.set_status(500);
             message.set_response("text/plain", MemoryUse.COPY, e.message.data);
@@ -180,17 +188,21 @@ internal class RuiHttpServer {
     void start() throws Error{
         Context context = new Context(null, null, 0);
 
-        ControlPoint control_point = new ControlPoint(context, "urn:schemas-upnp-org:service:RemoteUIServer:1");
+        ControlPoint control_point = new ControlPoint(context,
+            "urn:schemas-upnp-org:service:RemoteUIServer:1");
         control_point.service_proxy_available.connect(service_proxy_available);
         control_point.set_active(true);
 
-        stdout.printf("Starting DLNA Remote UI server service server on %s:%u\n", context.host_ip, context.port);
+        stdout.printf(
+            "Starting DLNA Remote UI server service server on %s:%u\n",
+            context.host_ip, context.port);
 
         Server server = new Server(SERVER_PORT, 0, null);
         server.add_handler(null, handle_static_file);
         server.add_handler("/api/remote-uis", handle_rui_request);
         server.run_async();
-        stdout.printf("Starting HTTP server on  http://localhost:%u\n", server.port);
+        stdout.printf("Starting HTTP server on  http://localhost:%u\n",
+            server.port);
 
         MainLoop loop = new MainLoop();
         loop.run();
