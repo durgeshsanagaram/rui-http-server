@@ -28,6 +28,7 @@ body {
 
 .rui {
     clear: both;
+    width: 732px;
 }
 
 .rui-icon {
@@ -49,7 +50,7 @@ body {
 .rui-frame {
     background-image: url(../images/element-name-background.png);
     background-repeat: no-repeat;
-    width:700px;
+    width:650px;
     height:86px;
     float: left;
     margin-left: 10px;
