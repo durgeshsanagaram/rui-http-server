@@ -68,7 +68,7 @@
                     });
                     $("<span/>", {
                         "class": "rui-number"
-                    }).text(i).appendTo(link);
+                    }).appendTo(link);
                     var frame = $("<div/>", {
                         "class": "rui-frame"
                     });
@@ -97,9 +97,13 @@
                 }
                 uis[ui.id] = ui;
             }
+            var elements = list.children();
+            for (var i = 0; i < elements.length; ++i) {
+                $(elements[i]).find(".rui-number").text(i);
+            }
             for (var key in uis) {
                 if (!(key in newUis)) {
-                    $("#rui-element-" + uis[key].id).remove();
+                    $("#rui-element-" + key).remove();
                     delete uis[key];
                 }
             }
