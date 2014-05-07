@@ -13,11 +13,9 @@ body {
 
 .rui-number {
     background-image: url(../images/element-number-background.png);
-    width: 57px;
-    height: 65px;
-    line-height: 65px;
-    padding-top: 11px;
-    padding-left: 4px;
+    width: 65px;
+    height: 86px;
+    line-height: 86px;
     float: left;
     text-align: center;
 }
