@@ -67,6 +67,7 @@ internal class RuiHttpServer {
 
     void handle_compatible_uis(ServiceProxy service,
             ServiceProxyAction action) {
+        Soup.URI base_url = service.get_url_base();
         try {
             string ui_listing;
             service.end_action(action,
@@ -74,22 +75,30 @@ internal class RuiHttpServer {
                 "UIListing", typeof(string), out ui_listing,
                 null);
             Xml.Doc* doc = Xml.Parser.parse_memory(ui_listing, ui_listing.length);
-            Soup.URI base_url = service.get_url_base();
             if (doc == null) {
                 stderr.printf("Got bad UI listing from %s.\n",
                     base_url.to_string(false));
+                if (debug) {
+                    stderr.printf("  Content was: %s\n", ui_listing);
+                }
                 return;
             }
             Xml.Node* root = doc->get_root_element();
             if (root == null) {
                 stderr.printf("UI listing from %s has no elements.\n",
                     base_url.to_string(false));
+                if (debug) {
+                    stderr.printf("  Content was: %s\n", ui_listing);
+                }
                 delete doc;
                 return;
             }
             if (root->name != "uilist") {
                 stderr.printf("UI listing from %s doesn't start with a <uilist> element\n",
                     base_url.to_string(false));
+                if (debug) {
+                    stderr.printf("  Content was: %s\n", ui_listing);
+                }
                 delete doc;
                 return;
             }
@@ -130,11 +139,16 @@ internal class RuiHttpServer {
                     }
                 }
                 remoteUis.set(ui.id, ui);
+                if (debug) {
+                    stdout.printf("Discovered server \"%s\" at %s\n", ui.name,
+                        ui.url);
+                }
             }
 
             delete doc;
         } catch (Error e) {
-            stderr.printf("Error from GetCompatibleUIs: %s\n", e.message);
+            stderr.printf("Error from GetCompatibleUIs from %s: %s\n",
+                base_url.to_string(false), e.message);
             return;
         }
     }
@@ -193,6 +207,10 @@ internal class RuiHttpServer {
             message.set_response(content_type, MemoryUse.COPY,
                 data.get_data());
         } catch (Error e) {
+            if (debug) {
+                stderr.printf("Failed to read file %s: %s\n", file.get_path(),
+                    e.message);
+            }
             message.set_status(500);
             message.set_response("text/plain", MemoryUse.COPY, e.message.data);
         }
