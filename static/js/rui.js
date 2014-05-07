@@ -101,6 +101,6 @@
     
     $(window).load(function() {
         window.setInterval(getRuis, 5000);
+        getRuis();
     });
-    getRuis();
 })();
