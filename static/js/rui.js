@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 /*jslint browser: true, node: true, plusplus: true, vars: true, white: true,
-  indent: 4, maxlen: 80 */
+  indent: 4, maxlen: 80, jquery: true */
 /*jshint strict: true, shadow: true, camelcase: true, curly: true,
   quotmark: double, latedef: true, undef: true, unused: true, trailing: true */
 (function() {
