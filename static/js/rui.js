@@ -12,7 +12,26 @@
                     $("#" + ui.id).remove();
                 }
                 uis[ui.id] = ui;
-                list.append("<li id=\"" + ui.id + "\"><a href=\"" + ui.url + "\"><img src=\"" + ui.iconUrl + "\"/><span>" + ui.name + "</span></a></li>");
+
+                var element = $("<li/>", {
+                    "class": "rui",
+                    id: ui.id
+                });
+                var link = $("<a/>", {
+                    "class": "rui-link",
+                    href: ui.url
+                });
+                if (ui.iconUrl) {
+                    $("<img/>", {
+                        "class": "rui-icon",
+                        src: ui.iconUrl
+                    }).appendTo(link);
+                }
+                $("<span/>", {
+                    "class": "rui-name"
+                }).text(ui.name).appendTo(link);
+                link.appendTo(element);
+                element.appendTo(list);
             }
         });
     }
