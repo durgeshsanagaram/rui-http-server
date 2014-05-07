@@ -39,27 +39,42 @@ internal class RuiHttpServer {
     class RemoteUIMap {
         private Map<string, RemoteUI?> byId;
         private MultiMap<string, RemoteUI?> byService;
+        private Gee.List<RemoteUI?> inOrder;
 
         public RemoteUIMap() {
             byId = new HashMap<string, RemoteUI?>();
             byService = new HashMultiMap<string, RemoteUI?>();
+            inOrder = new ArrayList<RemoteUI?>();
         }
 
         public void set(string service_id, string id, RemoteUI? ui) {
             byId.set(id, ui);
             byService.set(service_id, ui);
+            for (var i = 0; i < inOrder.size; i++) {
+                if (inOrder[i].id == id) {
+                    inOrder[i] = ui;
+                    return;
+                }
+            }
+            inOrder.add(ui);
         }
 
         public void remove_service(string service_id) {
             foreach (RemoteUI ui in byService.get(service_id)) {
                 byId.unset(ui.id);
+                for (var i = 0; i < inOrder.size; i++) {
+                    if (inOrder[i].id == ui.id) {
+                        inOrder.remove_at(i);
+                        break;
+                    }
+                }
             }
             byService.remove_all(service_id);
         }
 
         public Collection<RemoteUI?> values {
             owned get {
-                return byId.values;
+                return inOrder;
             }
         }
     }
