@@ -65,18 +65,20 @@ internal class RuiHttpServer {
             Xml.Doc* doc = Xml.Parser.parse_memory(ui_listing, ui_listing.length);
             Soup.URI base_url = service.get_url_base();
             if (doc == null) {
-                stderr.printf("Got bad UI listing.\n");
+                stderr.printf("Got bad UI listing from %s.\n",
+                    base_url.to_string(false));
                 return;
             }
             Xml.Node* root = doc->get_root_element();
             if (root == null) {
-                stderr.printf("UI listing has no elements.\n");
+                stderr.printf("UI listing from %s has no elements.\n",
+                    base_url.to_string(false));
                 delete doc;
                 return;
             }
             if (root->name != "uilist") {
-                stderr.printf(
-                    "UI listing doesn't start with a <uilist> element\n");
+                stderr.printf("UI listing from %s doesn't start with a <uilist> element\n",
+                    base_url.to_string(false));
                 delete doc;
                 return;
             }
@@ -194,7 +196,7 @@ internal class RuiHttpServer {
         control_point.set_active(true);
 
         stdout.printf(
-            "Starting DLNA Remote UI server service server on %s:%u\n",
+            "Starting UPnP server on %s:%u\n",
             context.host_ip, context.port);
 
         Server server = new Server(SERVER_PORT, 0, null);
