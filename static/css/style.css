@@ -17,7 +17,7 @@ body {
     height: 65px;
     line-height: 65px;
     padding-top: 11px;
-    padding-left: 3px;
+    padding-left: 4px;
     float: left;
     text-align: center;
 }
@@ -28,7 +28,7 @@ body {
 
 .rui {
     clear: both;
-    width: 732px;
+    width: 733px;
 }
 
 .rui-icon {
