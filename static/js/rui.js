@@ -59,6 +59,13 @@
                         "class": "rui-link",
                         href: ui.url
                     });
+                    $("<span/>", {
+                        "class": "rui-number"
+                    }).text(i).appendTo(link);
+                    var frame = $("<div/>", {
+                        "class": "rui-frame"
+                    });
+                    frame.appendTo(link);
                     var icon = $("<img/>", {
                         "class": "rui-icon",
                         src: ui.iconUrl
@@ -69,10 +76,10 @@
                             icon.attr("src", DEFAULT_ICON);
                         }
                     });
-                    icon.appendTo(link);
+                    icon.appendTo(frame);
                     $("<span/>", {
                         "class": "rui-name"
-                    }).text(ui.name).appendTo(link);
+                    }).text(ui.name).appendTo(frame);
                     link.appendTo(element);
                     element.appendTo(list);
                 }
