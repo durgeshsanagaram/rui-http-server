@@ -9,6 +9,7 @@ body {
     font-size : 25px;
     font-weight: 400;
     margin: 0;
+    min-width: 778px;
 }
 
 .rui-number {
