@@ -33,6 +33,7 @@
     var DEFAULT_ICON = "images/default-icon.png";
 
     var uis = {};
+    var badImages = {};
     
     function getRuis() {
         $.get("api/remote-uis", function(data) {
@@ -40,7 +41,7 @@
             var newUis = {};
             for (var i = 0; i < data.length; ++i) {
                 var ui = data[i];
-                if (!ui.iconUrl) {
+                if (!ui.iconUrl || ui.iconUrl in badImages) {
                     ui.iconUrl = DEFAULT_ICON;
                 }
                 newUis[ui.id] = true;
@@ -49,7 +50,10 @@
                     var link = element.find(".rui-link");
                     link.attr("href", ui.url);
                     element.find(".rui-name").text(ui.name);
-                    element.find(".rui-icon").attr("src", ui.iconUrl);
+                    var icon = element.find(".rui-icon");
+                    if (icon.attr("src") != ui.iconUrl) {
+                        element.find(".rui-icon").attr("src", ui.iconUrl);
+                    }
                 } else {
                     var element = $("<li/>", {
                         "class": "rui",
@@ -72,6 +76,7 @@
                     });
                     icon.error(function() {
                         var icon = $(this);
+                        badImages[icon.attr("src")] = true;
                         if (icon.attr("src") !== DEFAULT_ICON) {
                             icon.attr("src", DEFAULT_ICON);
                         }
