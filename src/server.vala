@@ -36,6 +36,34 @@ internal class RuiHttpServer {
         string? url;
     }
 
+    class RemoteUIMap {
+        private Map<string, RemoteUI?> byId;
+        private MultiMap<string, RemoteUI?> byService;
+
+        public RemoteUIMap() {
+            byId = new HashMap<string, RemoteUI?>();
+            byService = new HashMultiMap<string, RemoteUI?>();
+        }
+
+        public void set(string service_id, string id, RemoteUI? ui) {
+            byId.set(id, ui);
+            byService.set(service_id, ui);
+        }
+
+        public void remove_service(string service_id) {
+            foreach (RemoteUI ui in byService.get(service_id)) {
+                byId.unset(ui.id);
+            }
+            byService.remove_all(service_id);
+        }
+
+        public Collection<RemoteUI?> values {
+            owned get {
+                return byId.values;
+            }
+        }
+    }
+
     static int port = 0;
     static bool debug = false;
 
@@ -47,10 +75,10 @@ internal class RuiHttpServer {
         { null }
     };
 
-    HashMap<string, RemoteUI?> remoteUis;
+    RemoteUIMap remoteUis;
 
     RuiHttpServer() {
-        remoteUis = new HashMap<string, RemoteUI?>();
+        remoteUis = new RemoteUIMap();
     }
 
     static string? get_url_from_xml(Xml.Node* node, Soup.URI base_url, string name) {
@@ -139,7 +167,7 @@ internal class RuiHttpServer {
                             break;
                     }
                 }
-                remoteUis.set(ui.id, ui);
+                remoteUis.set(service.get_id(), ui.id, ui);
                 if (debug) {
                     stdout.printf("Discovered server \"%s\" at %s\n", ui.name,
                         ui.url);
@@ -161,6 +189,14 @@ internal class RuiHttpServer {
             "InputDeviceProfile", typeof(string), "",
             "UIFilter", typeof(string), "",
             null);
+    }
+
+    void service_proxy_unavailable(ControlPoint control_point,
+        ServiceProxy service) {
+        if (debug) {
+            stdout.printf("Service unavailable %s\n", service.get_id());
+        }
+        remoteUis.remove_service(service.get_id());
     }
 
     void handle_rui_request(Server server, Message message, string path,
@@ -237,6 +273,7 @@ internal class RuiHttpServer {
         ControlPoint control_point = new ControlPoint(context,
             "urn:schemas-upnp-org:service:RemoteUIServer:1");
         control_point.service_proxy_available.connect(service_proxy_available);
+        control_point.service_proxy_unavailable.connect(service_proxy_unavailable);
         control_point.set_active(true);
 
         stdout.printf(
