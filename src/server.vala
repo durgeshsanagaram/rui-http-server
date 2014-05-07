@@ -194,12 +194,6 @@ internal class RuiHttpServer {
             path = "index.html";
         }
         var file = File.new_for_path("static/" + path);
-        if (!file.query_exists()) {
-            message.set_status(404);
-            message.set_response("text/plain", MemoryUse.COPY,
-                ("File " + file.get_path() + " does not exist.").data);
-            return;
-        }
         try {
             var io = file.read();
             var info = file.query_info("*", FileQueryInfoFlags.NONE);
@@ -208,6 +202,10 @@ internal class RuiHttpServer {
             message.set_status(Soup.Status.OK);
             message.set_response(content_type, MemoryUse.COPY,
                 data.get_data());
+        } catch (IOError.NOT_FOUND e) {
+            message.set_status(404);
+            message.set_response("text/plain", MemoryUse.COPY,
+                ("File " + file.get_path() + " does not exist.").data);
         } catch (Error e) {
             if (debug) {
                 stderr.printf("Failed to read file %s: %s\n", file.get_path(),
@@ -227,8 +225,7 @@ internal class RuiHttpServer {
         control_point.set_active(true);
 
         stdout.printf(
-            "Starting UPnP server on %s:%u\n",
-            context.host_ip, context.port);
+            "Starting UPnP server on %s:%u\n", context.host_ip, context.port);
 
         Server server = new Server(SERVER_PORT, port, null);
         server.add_handler(null, handle_static_file);
