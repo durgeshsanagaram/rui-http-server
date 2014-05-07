@@ -11,18 +11,6 @@ body {
     margin: 0;
 }
 
-.uiElementNumber {
-    background-image: url(../images/element-number-background.png);
-    background-repeat: no-repeat;
-    width: 65px;
-    height: 57px;
-    float: left;
-    text-align: center;
-    left: 0;
-    top: 0;
-    padding-top: 29px;
-}
-
 .rui-number {
     background-image: url(../images/element-number-background.png);
     width: 57px;
