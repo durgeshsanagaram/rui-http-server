@@ -190,18 +190,26 @@ internal class RuiHttpServer {
     
     void handle_static_file(Server server, Message message, string path,
             HashTable? query, ClientContext context) {
+        server.pause_message(message);
+        handle_static_file_async.begin(server, message, path, query, context);
+    }
+
+    async void handle_static_file_async(Server server, Message message, string path,
+            HashTable? query, ClientContext context) {
         if (path == "/" || path == "") {
             path = "index.html";
         }
         var file = File.new_for_path("static/" + path);
         try {
-            var io = file.read();
-            var info = file.query_info("*", FileQueryInfoFlags.NONE);
-            var data = io.read_bytes((size_t)info.get_size());
+            var info = yield file.query_info_async("*", FileQueryInfoFlags.NONE);
+            var io = yield file.read_async();
+            Bytes data;
+            while ((data = yield io.read_bytes_async((size_t)info.get_size())).length > 0) {
+                message.response_body.append(MemoryUse.COPY, data.get_data());
+            }
             string content_type = info.get_content_type();
             message.set_status(Soup.Status.OK);
-            message.set_response(content_type, MemoryUse.COPY,
-                data.get_data());
+            message.response_headers.set_content_type(content_type, null);
         } catch (IOError.NOT_FOUND e) {
             message.set_status(404);
             message.set_response("text/plain", MemoryUse.COPY,
@@ -213,6 +221,8 @@ internal class RuiHttpServer {
             }
             message.set_status(500);
             message.set_response("text/plain", MemoryUse.COPY, e.message.data);
+        } finally {
+            server.unpause_message(message);
         }
     }
 
