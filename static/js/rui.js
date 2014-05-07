@@ -41,8 +41,14 @@
             var newUis = {};
             for (var i = 0; i < data.length; ++i) {
                 var ui = data[i];
-                if (!ui.iconUrl || ui.iconUrl in badImages) {
-                    ui.iconUrl = DEFAULT_ICON;
+                ui.iconUrls.next = function() {
+                    var url;
+                    while (url = this.pop()) {
+                        if (!(url in badImages)) {
+                            return url;
+                        }
+                    }
+                    return DEFAULT_ICON;
                 }
                 newUis[ui.id] = true;
                 if (uis[ui.id]) {
@@ -50,10 +56,7 @@
                     var link = element.find(".rui-link");
                     link.attr("href", ui.url);
                     element.find(".rui-name").text(ui.name);
-                    var icon = element.find(".rui-icon");
-                    if (icon.attr("src") != ui.iconUrl) {
-                        element.find(".rui-icon").attr("src", ui.iconUrl);
-                    }
+                    element.find(".rui-icon").attr("src", ui.iconUrls.next());
                 } else {
                     var element = $("<li/>", {
                         "class": "rui",
@@ -72,13 +75,17 @@
                     frame.appendTo(link);
                     var icon = $("<img/>", {
                         "class": "rui-icon",
-                        src: ui.iconUrl
+                        src: ui.iconUrls.next()
                     });
+                    icon.data("ui", ui);
                     icon.error(function() {
                         var icon = $(this);
+                        var ui = icon.data("ui");
+                        console.log("Failed to load icon: " + icon.attr("src"));
                         badImages[icon.attr("src")] = true;
-                        if (icon.attr("src") !== DEFAULT_ICON) {
-                            icon.attr("src", DEFAULT_ICON);
+                        var nextUrl = ui.iconUrls.next();
+                        if (icon.attr("src") !== nextUrl) {
+                            icon.attr("src", nextUrl);
                         }
                     });
                     icon.appendTo(frame);

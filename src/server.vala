@@ -32,7 +32,7 @@ internal class RuiHttpServer {
         string? id;
         string? name;
         string? description;
-        string? iconUrl;
+        Gee.List<string> iconUrls;
         string? url;
     }
 
@@ -107,6 +107,7 @@ internal class RuiHttpServer {
                     continue;
                 }
                 RemoteUI ui = RemoteUI();
+                ui.iconUrls = new ArrayList<string>();
                 for (Xml.Node* child = ui_element->children; child != null; child = child->next) {
                     switch (child->name) {
                         case "uiID":
@@ -124,10 +125,10 @@ internal class RuiHttpServer {
                                 if (icon->name != "icon") {
                                     continue;
                                 }
-                                ui.iconUrl = get_url_from_xml(icon, base_url,
+                                string url = get_url_from_xml(icon, base_url,
                                     "url");
-                                if (ui.iconUrl != null) {
-                                    break;
+                                if (url != null) {
+                                    ui.iconUrls.add(url);
                                 }
                             }
                             break;
@@ -174,8 +175,12 @@ internal class RuiHttpServer {
             builder.add_string_value(ui.name);
             builder.set_member_name("url");
             builder.add_string_value(ui.url);
-            builder.set_member_name("iconUrl");
-            builder.add_string_value(ui.iconUrl);
+            builder.set_member_name("iconUrls");
+            builder.begin_array();
+            foreach (string url in ui.iconUrls) {
+                builder.add_string_value(url);
+            }
+            builder.end_array();
             builder.end_object();
         }
         builder.end_array();
