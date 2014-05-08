@@ -2,7 +2,7 @@
 
 On Ubuntu 14.04:
 
-    sudo apt-get install valac libgupnp-1.0-dev libgee-dev libjson-glib-dev
+    sudo apt-get install git valac libgupnp-1.0-dev libgee-dev libjson-glib-dev
 
     # tup build tool
     # see: http://gittup.org/tup/
@@ -10,8 +10,14 @@ On Ubuntu 14.04:
     sudo apt-get update
     sudo apt-get install tup
 
+## Get Source
+
+    git clone https://github.com/cablelabs/rui-http-server.git
+    cd rui-http-server
+
 ## Build
 
+    tup init
     tup upd
 
 While developing, it can be useful to leave `tup` running in the background, autocompiling every time anything changes:
