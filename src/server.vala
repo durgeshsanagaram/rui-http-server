@@ -184,8 +184,8 @@ internal class RuiHttpServer {
                 }
                 services.add(service, ui);
                 if (debug) {
-                    stdout.printf("Discovered server \"%s\" at %s\n", ui.name,
-                        ui.url);
+                    stdout.printf("Discovered server \"%s\" at %s from %s\n",
+                        ui.name, ui.url, service.udn);
                 }
             }
 
@@ -209,7 +209,7 @@ internal class RuiHttpServer {
     void service_proxy_unavailable(ControlPoint control_point,
             ServiceProxy service) {
         if (debug) {
-            stdout.printf("Service unavailable %s\n", service.get_id());
+            stdout.printf("Service unavailable %s\n", service.udn);
         }
         services.remove(service);
     }
