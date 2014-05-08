@@ -36,22 +36,22 @@ internal class RuiHttpServer {
         string? url;
     }
 
-    class RemoteUIMap {
+    class ServiceMap {
         private Map<string, RemoteUI?> byId;
         private MultiMap<string, RemoteUI?> byService;
         private Gee.List<RemoteUI?> inOrder;
 
-        public RemoteUIMap() {
+        public ServiceMap() {
             byId = new HashMap<string, RemoteUI?>();
             byService = new HashMultiMap<string, RemoteUI?>();
             inOrder = new ArrayList<RemoteUI?>();
         }
 
-        public void set(string service_id, string id, RemoteUI? ui) {
-            byId.set(id, ui);
-            byService.set(service_id, ui);
+        public void add(ServiceProxy service, RemoteUI ui) {
+            byId.set(ui.id, ui);
+            byService.set(service.udn, ui);
             for (var i = 0; i < inOrder.size; i++) {
-                if (inOrder[i].id == id) {
+                if (inOrder[i].id == ui.id) {
                     inOrder[i] = ui;
                     return;
                 }
@@ -59,8 +59,8 @@ internal class RuiHttpServer {
             inOrder.add(ui);
         }
 
-        public void remove_service(string service_id) {
-            foreach (RemoteUI ui in byService.get(service_id)) {
+        public void remove(ServiceProxy service) {
+            foreach (RemoteUI ui in byService.get(service.udn)) {
                 byId.unset(ui.id);
                 for (var i = 0; i < inOrder.size; i++) {
                     if (inOrder[i].id == ui.id) {
@@ -69,10 +69,10 @@ internal class RuiHttpServer {
                     }
                 }
             }
-            byService.remove_all(service_id);
+            byService.remove_all(service.udn);
         }
 
-        public Collection<RemoteUI?> values {
+        public Collection<RemoteUI?> uis {
             owned get {
                 return inOrder;
             }
@@ -90,10 +90,10 @@ internal class RuiHttpServer {
         { null }
     };
 
-    RemoteUIMap remoteUis;
+    ServiceMap services;
 
     RuiHttpServer() {
-        remoteUis = new RemoteUIMap();
+        services = new ServiceMap();
     }
 
     static string? get_url_from_xml(Xml.Node* node, Soup.URI base_url, string name) {
@@ -182,7 +182,7 @@ internal class RuiHttpServer {
                             break;
                     }
                 }
-                remoteUis.set(service.get_id(), ui.id, ui);
+                services.add(service, ui);
                 if (debug) {
                     stdout.printf("Discovered server \"%s\" at %s\n", ui.name,
                         ui.url);
@@ -207,18 +207,18 @@ internal class RuiHttpServer {
     }
 
     void service_proxy_unavailable(ControlPoint control_point,
-        ServiceProxy service) {
+            ServiceProxy service) {
         if (debug) {
             stdout.printf("Service unavailable %s\n", service.get_id());
         }
-        remoteUis.remove_service(service.get_id());
+        services.remove(service);
     }
 
     void handle_rui_request(Server server, Message message, string path,
             HashTable? query, ClientContext context) {
         Json.Builder builder = new Json.Builder();
         builder.begin_array();
-        foreach (RemoteUI ui in remoteUis.values) {
+        foreach (RemoteUI ui in services.uis) {
             builder.begin_object();
             builder.set_member_name("id");
             builder.add_string_value(ui.id);
