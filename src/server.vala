@@ -117,6 +117,11 @@ internal class RuiHttpServer {
                 /* out */
                 "UIListing", typeof(string), out ui_listing,
                 null);
+            if (ui_listing == null) {
+                stderr.printf("Got null UI listing from %s.\n",
+                    base_url.to_string(false));
+                return;
+            }
             Xml.Doc* doc = Xml.Parser.parse_memory(ui_listing, ui_listing.length);
             if (doc == null) {
                 stderr.printf("Got bad UI listing from %s.\n",
