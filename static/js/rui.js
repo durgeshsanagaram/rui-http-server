@@ -41,11 +41,20 @@
             var newUis = {};
             for (var i = 0; i < data.length; ++i) {
                 var ui = data[i];
-                ui.iconUrls.next = function() {
-                    var url;
-                    while (url = this.pop()) {
-                        if (!(url in badImages)) {
-                            return url;
+                ui.icons.sort(function(a, b) {
+                    if (a.width && b.width) {
+                        return a.width - b.width;
+                    }
+                    if (a.height && b.height) {
+                        return a.height - b.height;
+                    }
+                    return 0;
+                });
+                ui.icons.next = function() {
+                    var icon;
+                    while (icon = this.pop()) {
+                        if (!(icon.url in badImages)) {
+                            return icon.url;
                         }
                     }
                     return DEFAULT_ICON;
@@ -56,7 +65,7 @@
                     var link = element.find(".rui-link");
                     link.attr("href", ui.url);
                     element.find(".rui-name").text(ui.name);
-                    element.find(".rui-icon").attr("src", ui.iconUrls.next());
+                    element.find(".rui-icon").attr("src", ui.icons.next());
                 } else {
                     var element = $("<li/>", {
                         "class": "rui",
@@ -75,7 +84,7 @@
                     frame.appendTo(link);
                     var icon = $("<img/>", {
                         "class": "rui-icon",
-                        src: ui.iconUrls.next()
+                        src: ui.icons.next()
                     });
                     icon.data("ui", ui);
                     icon.error(function() {
@@ -83,7 +92,7 @@
                         var ui = icon.data("ui");
                         console.log("Failed to load icon: " + icon.attr("src"));
                         badImages[icon.attr("src")] = true;
-                        var nextUrl = ui.iconUrls.next();
+                        var nextUrl = ui.icons.next();
                         if (icon.attr("src") !== nextUrl) {
                             icon.attr("src", nextUrl);
                         }

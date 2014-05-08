@@ -27,15 +27,21 @@ using Gee;
 using GUPnP;
 using Soup;
 
-internal class RuiHttpServer {
-    struct RemoteUI {
-        string? id;
-        string? name;
-        string? description;
-        Gee.List<string> iconUrls;
-        string? url;
-    }
+struct Icon {
+    uint64? width;
+    uint64? height;
+    string url;
+}
 
+struct RemoteUI {
+    string? id;
+    string? name;
+    string? description;
+    Icon[]? icons;
+    string? url;
+}
+
+internal class RuiHttpServer {
     class ServiceMap {
         private Map<string, RemoteUI?> byId;
         private MultiMap<string, RemoteUI?> byService;
@@ -155,7 +161,7 @@ internal class RuiHttpServer {
                     continue;
                 }
                 RemoteUI ui = RemoteUI();
-                ui.iconUrls = new ArrayList<string>();
+                ui.icons = {};
                 for (Xml.Node* child = ui_element->children; child != null; child = child->next) {
                     switch (child->name) {
                         case "uiID":
@@ -169,15 +175,38 @@ internal class RuiHttpServer {
                             break;
                         case "iconList":
                             // TODO: Pick the best icon instead of the first one
-                            for (Xml.Node* icon = child->children; icon != null; icon = icon->next) {
-                                if (icon->name != "icon") {
+                            for (Xml.Node* icon_node = child->children; icon_node != null; icon_node = icon_node->next) {
+                                if (icon_node->name != "icon") {
                                     continue;
                                 }
-                                string url = get_url_from_xml(icon, base_url,
-                                    "url");
-                                if (url != null) {
-                                    ui.iconUrls.add(url);
+                                Icon icon = {};
+                                icon.url = get_url_from_xml(icon_node,
+                                    base_url, "url");
+                                if (icon.url == null) {
+                                    if (debug) {
+                                        stderr.printf("Ignoring icon with no URL.\n");
+                                    }
+                                    continue;
                                 }
+                                for (Xml.Node* icon_child = icon_node->children; icon_child != null; icon_child = icon_child->next) {
+                                    switch(icon_child->name) {
+                                        case "width":
+                                            var width = icon_child->get_content();
+                                            icon.width = long.parse(width);
+                                            if (icon.width == 0) {
+                                                icon.width = null;
+                                            }
+                                            break;
+                                        case "height":
+                                            var height = icon_child->get_content();
+                                            icon.height = long.parse(height);
+                                            if (icon.height == 0) {
+                                                icon.height = null;
+                                            }
+                                            break;
+                                    }
+                                }
+                                ui.icons += icon;
                             }
                             break;
                         case "protocol":
@@ -231,10 +260,21 @@ internal class RuiHttpServer {
             builder.add_string_value(ui.name);
             builder.set_member_name("url");
             builder.add_string_value(ui.url);
-            builder.set_member_name("iconUrls");
+            builder.set_member_name("icons");
             builder.begin_array();
-            foreach (string url in ui.iconUrls) {
-                builder.add_string_value(url);
+            foreach (Icon icon in ui.icons) {
+                builder.begin_object();
+                builder.set_member_name("url");
+                builder.add_string_value(icon.url);
+                if (icon.width != null) {
+                    builder.set_member_name("width");
+                    builder.add_int_value((int64)icon.width);
+                }
+                if (icon.height != null) {
+                    builder.set_member_name("height");
+                    builder.add_int_value((int64)icon.height);
+                }
+                builder.end_object();
             }
             builder.end_array();
             builder.end_object();
