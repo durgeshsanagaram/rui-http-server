@@ -229,6 +229,8 @@
                 }
                 return;
             }
+            // Don't scroll using arrow keys
+            event.preventDefault();
             if (next === null || next.length === 0) {
                 return;
             }
