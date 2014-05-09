@@ -196,10 +196,17 @@
             selected.removeClass("selected");
             next.addClass("selected");
             updateSelectedHighlight();
+            var scrollTarget = next;
+            // Try to keep the selected element in the center of the screen
+            for (var i = 0; i < 2; ++i) {
+                if (scrollTarget.prev().length !== 0) {
+                    scrollTarget = scrollTarget.prev();
+                }
+            }
             var ruiList = $("#rui-list");
             ruiList.stop();
             ruiList.animate({
-                scrollTop: next.outerHeight(true) * next.data("index")
+                scrollTop: scrollTarget.outerHeight(true) * scrollTarget.data("index")
             });
         });
     });
