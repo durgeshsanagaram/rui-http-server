@@ -170,14 +170,6 @@
             uis[ui.id] = ui;
         }
 
-        // Add element numbers
-        var elements = list.children();
-        for (var i = 0; i < elements.length; ++i) {
-            var element = $(elements[i]);
-            element.find(".rui-number").text(i + 1);
-            element.data("index", i);
-        }
-
         // Remove UIs that don't exist anymore
         for (var key in uis) {
             if (!(key in newUis)) {
@@ -186,6 +178,14 @@
                 element.remove();
                 delete uis[key];
             }
+        }
+
+        // Add element numbers
+        var elements = list.children();
+        for (var i = 0; i < elements.length; ++i) {
+            var element = $(elements[i]);
+            element.find(".rui-number").text(i + 1);
+            element.data("index", i);
         }
         updateSelectedHighlight();
     });
