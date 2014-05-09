@@ -34,11 +34,35 @@
 
     var uis = {};
     var badImages = {};
+
+    function updateSelectedHighlight() {
+        var selected = $(".selected");
+        var elements = $("#rui-list").children();
+        if (selected.length === 0) {
+            if (elements.length === 0) {
+                return;
+            }
+            selected = elements.first();
+            selected.addClass("selected");
+        }
+        for (var i = 0; i < elements.length; ++i) {
+            var element = $(elements[i]);
+            element.data("index", i);
+            var pageStart = selected.data("index") - (selected.data("index") % 5);
+            if (i >= pageStart && i < pageStart + 5) {
+                element.show();
+            } else {
+                element.hide();
+            }
+        }
+    }
     
     function getRuis() {
         $.getJSON("api/remote-uis", function(data) {
             var list = $("#rui-list");
             var newUis = {};
+
+            // Add or update UIs
             for (var i = 0; i < data.length; ++i) {
                 var ui = data[i];
                 ui.icons.sort(function(a, b) {
@@ -66,11 +90,13 @@
                     link.attr("href", ui.url);
                     element.find(".rui-name").text(ui.name);
                     element.find(".rui-icon").attr("src", ui.icons.next());
+                    element.data("ui", ui);
                 } else {
                     var element = $("<li/>", {
                         "class": "rui",
                         id: "rui-element-" + ui.id
                     });
+                    element.data("ui", ui);
                     var link = $("<a/>", {
                         "class": "rui-link",
                         href: ui.url
@@ -106,10 +132,16 @@
                 }
                 uis[ui.id] = ui;
             }
+
+            // Add element numbers
             var elements = list.children();
             for (var i = 0; i < elements.length; ++i) {
-                $(elements[i]).find(".rui-number").text(i + 1);
+                var element = $(elements[i]);
+                element.find(".rui-number").text(i + 1);
             }
+            updateSelectedHighlight();
+
+            // Remove UIs that don't exist anymore
             for (var key in uis) {
                 if (!(key in newUis)) {
                     $("#rui-element-" + key).remove();
@@ -118,9 +150,33 @@
             }
         });
     }
-    
+
     $(window).load(function() {
         window.setInterval(getRuis, 5000);
         getRuis();
+        $(document.body).keydown(function(event) {
+            var selected = $(".selected");
+            if (selected.length === 0) {
+                return;
+            }
+            var next = null;
+            switch (event.key) {
+            case "Up":
+                next = selected.prev();
+                break;
+            case "Down":
+                next = selected.next();
+                break;
+            case "Enter":
+                window.location = selected.data("ui").url;
+                return;
+            }
+            if (next === null || next.length === 0) {
+                return;
+            }
+            selected.removeClass("selected");
+            next.addClass("selected");
+            updateSelectedHighlight();
+        });
     });
 })();
