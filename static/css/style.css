@@ -1,15 +1,25 @@
 body {
-    background-color: #004988;
-    background-image: url(../images/body-background-dlna.png);
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    background-attachment: fixed;
     font-family : Sans-Serif;
     color: White;
     font-size : 25px;
     font-weight: 400;
     margin: 0;
     min-width: 778px;
+}
+
+html:after {
+    background-color: #004988;
+    background-image: url(../images/body-background-dlna.png);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-attachment: fixed;
+    content: "";
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    z-index: -1;
 }
 
 .rui-number {
