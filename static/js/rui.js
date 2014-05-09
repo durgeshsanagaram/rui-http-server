@@ -177,7 +177,9 @@
         // Remove UIs that don't exist anymore
         for (var key in uis) {
             if (!(key in newUis)) {
-                $("#rui-element-" + key).remove();
+                var element =  $("#rui-element-" + key);
+                element.prev().addClass("selected");
+                element.remove();
                 delete uis[key];
             }
         }
