@@ -173,7 +173,6 @@
             element.find(".rui-number").text(i + 1);
             element.data("index", i);
         }
-        updateSelectedHighlight();
 
         // Remove UIs that don't exist anymore
         for (var key in uis) {
@@ -182,6 +181,7 @@
                 delete uis[key];
             }
         }
+        updateSelectedHighlight();
     });
 
     var keyCodeMap = {
