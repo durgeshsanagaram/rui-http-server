@@ -165,6 +165,21 @@
             case "Enter":
                 window.location = selected.data("ui").url;
                 return;
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7":
+            case "8":
+            case "9":
+                var i = parseInt(event.key) - 1;
+                var target = $("#rui-list").children()[i];
+                if (target) {
+                    window.location = $(target).data("ui").url;
+                }
+                break;
             }
             if (next === null || next.length === 0) {
                 return;
