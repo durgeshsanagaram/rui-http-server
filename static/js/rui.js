@@ -32,6 +32,7 @@
     
     var DEFAULT_ICON = "images/default-icon.png";
 
+    var ruiDiscoverer = new RUIDiscoverer();
     var uis = {};
     var badImages = {};
 
@@ -89,101 +90,99 @@
             scrollTop: scrollTarget.outerHeight(true) * scrollTarget.data("index")
         });
     }
-    
-    function getRuis() {
-        $.getJSON("api/remote-uis", function(data) {
-            var list = $("#rui-list");
-            var newUis = {};
 
-            // Add or update UIs
-            for (var i = 0; i < data.length; ++i) {
-                var ui = data[i];
-                ui.icons.sort(function(a, b) {
-                    if (a.width && b.width) {
-                        return a.width - b.width;
+    $(ruiDiscoverer).on("change", function(event, data) {
+        var list = $("#rui-list");
+        var newUis = {};
+
+        // Add or update UIs
+        for (var i = 0; i < data.length; ++i) {
+            var ui = data[i];
+            ui.icons.sort(function(a, b) {
+                if (a.width && b.width) {
+                    return a.width - b.width;
+                }
+                if (a.height && b.height) {
+                    return a.height - b.height;
+                }
+                return 0;
+            });
+            ui.icons.next = function() {
+                var icon;
+                while (icon = this.pop()) {
+                    if (!(icon.url in badImages)) {
+                        return icon.url;
                     }
-                    if (a.height && b.height) {
-                        return a.height - b.height;
-                    }
-                    return 0;
+                }
+                return DEFAULT_ICON;
+            }
+            newUis[ui.id] = true;
+            if (uis[ui.id]) {
+                var element = $("#rui-element-" + ui.id);
+                var link = element.find(".rui-link");
+                link.attr("href", ui.url);
+                element.find(".rui-name").text(ui.name);
+                element.find(".rui-icon").attr("src", ui.icons.next());
+                element.data("ui", ui);
+            } else {
+                var element = $("<li/>", {
+                    "class": "rui",
+                    id: "rui-element-" + ui.id
                 });
-                ui.icons.next = function() {
-                    var icon;
-                    while (icon = this.pop()) {
-                        if (!(icon.url in badImages)) {
-                            return icon.url;
-                        }
+                element.data("ui", ui);
+                var link = $("<a/>", {
+                    "class": "rui-link",
+                    href: ui.url
+                });
+                $("<span/>", {
+                    "class": "rui-number"
+                }).appendTo(link);
+                var frame = $("<div/>", {
+                    "class": "rui-frame"
+                });
+                frame.appendTo(link);
+                var icon = $("<img/>", {
+                    "class": "rui-icon",
+                    src: ui.icons.next()
+                });
+                icon.data("ui", ui);
+                icon.error(function() {
+                    var icon = $(this);
+                    var ui = icon.data("ui");
+                    console.log("Failed to load icon: " + icon.attr("src"));
+                    badImages[icon.attr("src")] = true;
+                    var nextUrl = ui.icons.next();
+                    if (icon.attr("src") !== nextUrl) {
+                        icon.attr("src", nextUrl);
                     }
-                    return DEFAULT_ICON;
-                }
-                newUis[ui.id] = true;
-                if (uis[ui.id]) {
-                    var element = $("#rui-element-" + ui.id);
-                    var link = element.find(".rui-link");
-                    link.attr("href", ui.url);
-                    element.find(".rui-name").text(ui.name);
-                    element.find(".rui-icon").attr("src", ui.icons.next());
-                    element.data("ui", ui);
-                } else {
-                    var element = $("<li/>", {
-                        "class": "rui",
-                        id: "rui-element-" + ui.id
-                    });
-                    element.data("ui", ui);
-                    var link = $("<a/>", {
-                        "class": "rui-link",
-                        href: ui.url
-                    });
-                    $("<span/>", {
-                        "class": "rui-number"
-                    }).appendTo(link);
-                    var frame = $("<div/>", {
-                        "class": "rui-frame"
-                    });
-                    frame.appendTo(link);
-                    var icon = $("<img/>", {
-                        "class": "rui-icon",
-                        src: ui.icons.next()
-                    });
-                    icon.data("ui", ui);
-                    icon.error(function() {
-                        var icon = $(this);
-                        var ui = icon.data("ui");
-                        console.log("Failed to load icon: " + icon.attr("src"));
-                        badImages[icon.attr("src")] = true;
-                        var nextUrl = ui.icons.next();
-                        if (icon.attr("src") !== nextUrl) {
-                            icon.attr("src", nextUrl);
-                        }
-                    });
-                    icon.appendTo(frame);
-                    $("<span/>", {
-                        "class": "rui-name"
-                    }).text(ui.name).appendTo(frame);
-                    link.appendTo(element);
-                    element.appendTo(list);
-                }
-                uis[ui.id] = ui;
+                });
+                icon.appendTo(frame);
+                $("<span/>", {
+                    "class": "rui-name"
+                }).text(ui.name).appendTo(frame);
+                link.appendTo(element);
+                element.appendTo(list);
             }
+            uis[ui.id] = ui;
+        }
 
-            // Add element numbers
-            var elements = list.children();
-            for (var i = 0; i < elements.length; ++i) {
-                var element = $(elements[i]);
-                element.find(".rui-number").text(i + 1);
-                element.data("index", i);
-            }
-            updateSelectedHighlight();
+        // Add element numbers
+        var elements = list.children();
+        for (var i = 0; i < elements.length; ++i) {
+            var element = $(elements[i]);
+            element.find(".rui-number").text(i + 1);
+            element.data("index", i);
+        }
+        updateSelectedHighlight();
 
-            // Remove UIs that don't exist anymore
-            for (var key in uis) {
-                if (!(key in newUis)) {
-                    $("#rui-element-" + key).remove();
-                    delete uis[key];
-                }
+        // Remove UIs that don't exist anymore
+        for (var key in uis) {
+            if (!(key in newUis)) {
+                $("#rui-element-" + key).remove();
+                delete uis[key];
             }
-        });
-    }
+        }
+    });
 
     var keyCodeMap = {
         13: "Enter",
@@ -194,8 +193,6 @@
         keyCodeMap[i + 48] = i.toString();
     }
     $(window).load(function() {
-        window.setInterval(getRuis, 5000);
-        getRuis();
         $(document.body).keydown(function(event) {
             var selected = $(".selected");
             if (selected.length === 0) {
