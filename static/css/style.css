@@ -83,10 +83,10 @@ header.main-header, footer.main-footer {
 }
 
 header.main-header {
-    height: 30px;
+    height: 38px;
+    line-height: 38px;
     background-image: url(../images/header-background.png);
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    padding: 4px;
     padding-left: 80px;
 }
