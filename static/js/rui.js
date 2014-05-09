@@ -108,7 +108,7 @@
             }
             var elements = list.children();
             for (var i = 0; i < elements.length; ++i) {
-                $(elements[i]).find(".rui-number").text(i);
+                $(elements[i]).find(".rui-number").text(i + 1);
             }
             for (var key in uis) {
                 if (!(key in newUis)) {
