@@ -28,6 +28,7 @@ body {
 .rui {
     clear: both;
     width: 734px;
+    overflow: auto;
 }
 
 .rui-icon {

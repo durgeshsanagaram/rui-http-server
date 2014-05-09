@@ -48,12 +48,6 @@
         for (var i = 0; i < elements.length; ++i) {
             var element = $(elements[i]);
             element.data("index", i);
-            var pageStart = selected.data("index") - (selected.data("index") % 5);
-            if (i >= pageStart && i < pageStart + 5) {
-                element.show();
-            } else {
-                element.hide();
-            }
         }
     }
     
@@ -138,6 +132,7 @@
             for (var i = 0; i < elements.length; ++i) {
                 var element = $(elements[i]);
                 element.find(".rui-number").text(i + 1);
+                element.data("index", i);
             }
             updateSelectedHighlight();
 
@@ -177,6 +172,11 @@
             selected.removeClass("selected");
             next.addClass("selected");
             updateSelectedHighlight();
+            var ruiList = $("#rui-list");
+            ruiList.stop();
+            ruiList.animate({
+                scrollTop: next.outerHeight(true) * next.data("index")
+            });
         });
     });
 })();
