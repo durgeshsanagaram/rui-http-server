@@ -146,6 +146,14 @@
         });
     }
 
+    var keyCodeMap = {
+        13: "Enter",
+        38: "Up",
+        40: "Down"
+    };
+    for (var i = 0; i <= 9; ++i) {
+        keyCodeMap[i + 48] = i.toString();
+    }
     $(window).load(function() {
         window.setInterval(getRuis, 5000);
         getRuis();
@@ -155,7 +163,8 @@
                 return;
             }
             var next = null;
-            switch (event.key) {
+            var key = event.key || keyCodeMap[event.keyCode];
+            switch (key) {
             case "Up":
                 next = selected.prev();
                 break;
@@ -174,12 +183,12 @@
             case "7":
             case "8":
             case "9":
-                var i = parseInt(event.key) - 1;
+                var i = parseInt(key) - 1;
                 var target = $("#rui-list").children()[i];
                 if (target) {
                     window.location = $(target).data("ui").url;
                 }
-                break;
+                return;
             }
             if (next === null || next.length === 0) {
                 return;
