@@ -35,9 +35,30 @@
     var uis = {};
     var badImages = {};
 
+    var setInitialHeight = false;
+    var visibleUIs = 0;
+    function updateRUIListHeight() {
+        // Set RUI list height so we don't show cut-off elements
+        var selected = $(".selected");
+        if (selected.length === 0) {
+            return;
+        }
+        var childHeight = selected.outerHeight();
+        var ruiList = $("#rui-list");
+        visibleUIs = Math.floor(ruiList.outerHeight(true) / childHeight);
+        var padding = ruiList.outerHeight(true) - visibleUIs * childHeight;
+        ruiList.css("margin-bottom", padding);
+        setInitialHeight = true;
+        scrollToSelected();
+    }
+    $(window).resize(function() {
+        updateRUIListHeight();
+    });
+
     function updateSelectedHighlight() {
         var selected = $(".selected");
-        var elements = $("#rui-list").children();
+        var ruiList = $("#rui-list");
+        var elements = ruiList.children();
         if (selected.length === 0) {
             if (elements.length === 0) {
                 return;
@@ -49,6 +70,24 @@
             var element = $(elements[i]);
             element.data("index", i);
         }
+        if (!setInitialHeight) {
+            updateRUIListHeight();
+        }
+    }
+
+    function scrollToSelected() {
+        var scrollTarget = $(".selected");
+        // Try to keep the selected element in the center of the screen
+        for (var i = 0; i < Math.floor(visibleUIs / 2); ++i) {
+            if (scrollTarget.prev().length !== 0) {
+                scrollTarget = scrollTarget.prev();
+            }
+        }
+        var ruiList = $("#rui-list");
+        ruiList.stop();
+        ruiList.animate({
+            scrollTop: scrollTarget.outerHeight(true) * scrollTarget.data("index")
+        });
     }
     
     function getRuis() {
@@ -196,18 +235,7 @@
             selected.removeClass("selected");
             next.addClass("selected");
             updateSelectedHighlight();
-            var scrollTarget = next;
-            // Try to keep the selected element in the center of the screen
-            for (var i = 0; i < 2; ++i) {
-                if (scrollTarget.prev().length !== 0) {
-                    scrollTarget = scrollTarget.prev();
-                }
-            }
-            var ruiList = $("#rui-list");
-            ruiList.stop();
-            ruiList.animate({
-                scrollTop: scrollTarget.outerHeight(true) * scrollTarget.data("index")
-            });
+            scrollToSelected();
         });
     });
 })();
