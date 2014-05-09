@@ -120,7 +120,9 @@
             if (uis[ui.id]) {
                 var element = $("#rui-element-" + ui.id);
                 var link = element.find(".rui-link");
-                link.attr("href", ui.url);
+                if (ui.protocols.length > 0) {
+                    link.attr("href", ui.protocols[0].uri);
+                }
                 element.find(".rui-name").text(ui.name);
                 element.find(".rui-icon").attr("src", ui.icons.next());
                 element.data("ui", ui);
@@ -131,9 +133,11 @@
                 });
                 element.data("ui", ui);
                 var link = $("<a/>", {
-                    "class": "rui-link",
-                    href: ui.url
+                    "class": "rui-link"
                 });
+                if (ui.protocols.length > 0) {
+                    link.attr("href", ui.protocols[0].uri);
+                }
                 $("<span/>", {
                     "class": "rui-number"
                 }).appendTo(link);
@@ -210,7 +214,7 @@
                 next = selected.next();
                 break;
             case "Enter":
-                window.location = selected.data("ui").url;
+                window.location = selected.data("ui").protocols[0].uri;
                 return;
             case "1":
             case "2":
@@ -224,7 +228,7 @@
                 var i = parseInt(key) - 1;
                 var target = $("#rui-list").children()[i];
                 if (target) {
-                    window.location = $(target).data("ui").url;
+                    window.location = $(target).data("ui").protocols[0].uri;
                 }
                 return;
             }

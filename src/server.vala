@@ -27,62 +27,12 @@ using Gee;
 using GUPnP;
 using Soup;
 
-struct Icon {
-    uint64? width;
-    uint64? height;
-    string url;
-}
-
-struct RemoteUI {
-    string? id;
-    string? name;
-    string? description;
-    Icon[]? icons;
-    string? url;
-}
-
 internal class RuiHttpServer {
-    class ServiceMap {
-        private Map<string, RemoteUI?> byId;
-        private MultiMap<string, RemoteUI?> byService;
-        private Gee.List<RemoteUI?> inOrder;
 
-        public ServiceMap() {
-            byId = new HashMap<string, RemoteUI?>();
-            byService = new HashMultiMap<string, RemoteUI?>();
-            inOrder = new ArrayList<RemoteUI?>();
-        }
-
-        public void add(ServiceProxy service, RemoteUI ui) {
-            byId.set(ui.id, ui);
-            byService.set(service.udn, ui);
-            for (var i = 0; i < inOrder.size; i++) {
-                if (inOrder[i].id == ui.id) {
-                    inOrder[i] = ui;
-                    return;
-                }
-            }
-            inOrder.add(ui);
-        }
-
-        public void remove(ServiceProxy service) {
-            foreach (RemoteUI ui in byService.get(service.udn)) {
-                byId.unset(ui.id);
-                for (var i = 0; i < inOrder.size; i++) {
-                    if (inOrder[i].id == ui.id) {
-                        inOrder.remove_at(i);
-                        break;
-                    }
-                }
-            }
-            byService.remove_all(service.udn);
-        }
-
-        public Collection<RemoteUI?> uis {
-            owned get {
-                return inOrder;
-            }
-        }
+    struct Service {
+        string id;
+        string base_url;
+        string ui_listing;
     }
 
     static int port = 0;
@@ -96,27 +46,15 @@ internal class RuiHttpServer {
         { null }
     };
 
-    ServiceMap services;
+    Map<string, Service?> services;
 
     RuiHttpServer() {
-        services = new ServiceMap();
-    }
-
-    static string? get_url_from_xml(Xml.Node* node, Soup.URI base_url, string name) {
-        for (Xml.Node* child = node->children; child != null; child = child->next) {
-            if (child->name != name) {
-                continue;
-            }
-            string url = child->get_content();
-            url = new Soup.URI.with_base(base_url, url).to_string(false);
-            return url;
-        }
-        return null;
+        services = new HashMap<string, Service?>();
     }
 
     void handle_compatible_uis(ServiceProxy service,
             ServiceProxyAction action) {
-        Soup.URI base_url = service.get_url_base();
+        string base_url = service.get_url_base().to_string(false);
         try {
             string ui_listing;
             service.end_action(action,
@@ -124,109 +62,13 @@ internal class RuiHttpServer {
                 "UIListing", typeof(string), out ui_listing,
                 null);
             if (ui_listing == null) {
-                stderr.printf("Got null UI listing from %s.\n",
-                    base_url.to_string(false));
+                stderr.printf("Got null UI listing from %s.\n", base_url);
                 return;
             }
-            Xml.Doc* doc = Xml.Parser.parse_memory(ui_listing, ui_listing.length);
-            if (doc == null) {
-                stderr.printf("Got bad UI listing from %s.\n",
-                    base_url.to_string(false));
-                if (debug) {
-                    stderr.printf("  Content was: %s\n", ui_listing);
-                }
-                return;
-            }
-            Xml.Node* root = doc->get_root_element();
-            if (root == null) {
-                stderr.printf("UI listing from %s has no elements.\n",
-                    base_url.to_string(false));
-                if (debug) {
-                    stderr.printf("  Content was: %s\n", ui_listing);
-                }
-                delete doc;
-                return;
-            }
-            if (root->name != "uilist") {
-                stderr.printf("UI listing from %s doesn't start with a <uilist> element\n",
-                    base_url.to_string(false));
-                if (debug) {
-                    stderr.printf("  Content was: %s\n", ui_listing);
-                }
-                delete doc;
-                return;
-            }
-            for (Xml.Node* ui_element = root->children; ui_element != null; ui_element = ui_element->next) {
-                if (ui_element->name != "ui") {
-                    continue;
-                }
-                RemoteUI ui = RemoteUI();
-                ui.icons = {};
-                for (Xml.Node* child = ui_element->children; child != null; child = child->next) {
-                    switch (child->name) {
-                        case "uiID":
-                            ui.id = child->get_content();
-                            break;
-                        case "name":
-                            ui.name = child->get_content();
-                            break;
-                        case "description":
-                            ui.description = child->get_content();
-                            break;
-                        case "iconList":
-                            // TODO: Pick the best icon instead of the first one
-                            for (Xml.Node* icon_node = child->children; icon_node != null; icon_node = icon_node->next) {
-                                if (icon_node->name != "icon") {
-                                    continue;
-                                }
-                                Icon icon = {};
-                                icon.url = get_url_from_xml(icon_node,
-                                    base_url, "url");
-                                if (icon.url == null) {
-                                    if (debug) {
-                                        stderr.printf("Ignoring icon with no URL.\n");
-                                    }
-                                    continue;
-                                }
-                                for (Xml.Node* icon_child = icon_node->children; icon_child != null; icon_child = icon_child->next) {
-                                    switch(icon_child->name) {
-                                        case "width":
-                                            var width = icon_child->get_content();
-                                            icon.width = long.parse(width);
-                                            if (icon.width == 0) {
-                                                icon.width = null;
-                                            }
-                                            break;
-                                        case "height":
-                                            var height = icon_child->get_content();
-                                            icon.height = long.parse(height);
-                                            if (icon.height == 0) {
-                                                icon.height = null;
-                                            }
-                                            break;
-                                    }
-                                }
-                                ui.icons += icon;
-                            }
-                            break;
-                        case "protocol":
-                            // TODO: Make sure this has shortName="DLNA-HTML5-1.0" ?
-                            ui.url = get_url_from_xml(child, base_url,
-                                "uri");
-                            break;
-                    }
-                }
-                services.add(service, ui);
-                if (debug) {
-                    stdout.printf("Discovered server \"%s\" at %s from %s\n",
-                        ui.name, ui.url, service.udn);
-                }
-            }
-
-            delete doc;
+            services.set(service.udn, {service.udn, base_url, ui_listing});
         } catch (Error e) {
             stderr.printf("Error from GetCompatibleUIs from %s: %s\n",
-                base_url.to_string(false), e.message);
+                base_url, e.message);
             return;
         }
     }
@@ -245,38 +87,21 @@ internal class RuiHttpServer {
         if (debug) {
             stdout.printf("Service unavailable %s\n", service.udn);
         }
-        services.remove(service);
+        services.remove(service.udn);
     }
 
     void handle_rui_request(Server server, Message message, string path,
             HashTable? query, ClientContext context) {
         Json.Builder builder = new Json.Builder();
         builder.begin_array();
-        foreach (RemoteUI ui in services.uis) {
+        foreach (Service service in services.values) {
             builder.begin_object();
             builder.set_member_name("id");
-            builder.add_string_value(ui.id);
-            builder.set_member_name("name");
-            builder.add_string_value(ui.name);
-            builder.set_member_name("url");
-            builder.add_string_value(ui.url);
-            builder.set_member_name("icons");
-            builder.begin_array();
-            foreach (Icon icon in ui.icons) {
-                builder.begin_object();
-                builder.set_member_name("url");
-                builder.add_string_value(icon.url);
-                if (icon.width != null) {
-                    builder.set_member_name("width");
-                    builder.add_int_value((int64)icon.width);
-                }
-                if (icon.height != null) {
-                    builder.set_member_name("height");
-                    builder.add_int_value((int64)icon.height);
-                }
-                builder.end_object();
-            }
-            builder.end_array();
+            builder.add_string_value(service.id);
+            builder.set_member_name("ui_listing");
+            builder.add_string_value(service.ui_listing);
+            builder.set_member_name("base_url");
+            builder.add_string_value(service.base_url);
             builder.end_object();
         }
         builder.end_array();
