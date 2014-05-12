@@ -45,8 +45,6 @@ html:after {
 	width: 60px;
 	height: 60px;
     float: left;
-    margin-top: 13px;
-    margin-left: 6px;
 }
 
 .rui-link {
@@ -60,10 +58,11 @@ html:after {
 .rui-frame {
     background-image: url(../images/element-name-background.png);
     background-repeat: no-repeat;
-    width:650px;
-    height:86px;
+    width:622px;
+    height:60px;
     float: left;
     margin-left: 10px;
+    padding: 13px 6px;
 }
 
 .rui.selected .rui-frame, .rui:hover .rui-frame{
@@ -74,7 +73,12 @@ html:after {
     float:left;
     padding: 0;
     margin-left: 20px;
-    padding-top: 29px;
+    line-height: 60px;
+    width: 542px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
 }
 
 #rui-list {
