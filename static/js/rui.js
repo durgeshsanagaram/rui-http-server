@@ -231,6 +231,8 @@
                     window.location = $(target).data("ui").protocols[0].uri;
                 }
                 return;
+            default:
+                return;
             }
             // Don't scroll using arrow keys
             event.preventDefault();
