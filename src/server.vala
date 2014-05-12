@@ -87,7 +87,7 @@ internal class RuiHttpServer {
         if (debug) {
             stdout.printf("Service unavailable %s\n", service.udn);
         }
-        services.remove(service.udn);
+        services.unset(service.udn);
     }
 
     void handle_rui_request(Server server, Message message, string path,
