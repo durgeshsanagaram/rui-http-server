@@ -23,72 +23,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-using Gee;
-using GUPnP;
-using Soup;
+public class RUI.HTTPServer {
 
-public class RuiHttpServer {
+    int port;
+    bool debug;
+    Discoverer discoverer;
+    Soup.Server server;
 
-    struct Service {
-        string id;
-        string base_url;
-        string ui_listing;
-    }
-
-    int port = 0;
-    bool debug = false;
-
-    Map<string, Service?> services;
-
-    public RuiHttpServer(int port, bool debug) {
+    public HTTPServer(int port = 0, bool debug = false) {
         this.port = port;
         this.debug = debug;
-        services = new HashMap<string, Service?>();
+        this.discoverer = new Discoverer(debug);
+        this.server = new Soup.Server(Soup.SERVER_PORT, port, null);
+        server.add_handler(null, handle_static_file);
+        server.add_handler("/api/remote-uis", handle_rui_request);
     }
 
-    void handle_compatible_uis(ServiceProxy service,
-            ServiceProxyAction action) {
-        string base_url = service.get_url_base().to_string(false);
-        try {
-            string ui_listing;
-            service.end_action(action,
-                /* out */
-                "UIListing", typeof(string), out ui_listing,
-                null);
-            if (ui_listing == null) {
-                stderr.printf("Got null UI listing from %s.\n", base_url);
-                return;
-            }
-            services.set(service.udn, {service.udn, base_url, ui_listing});
-        } catch (Error e) {
-            stderr.printf("Error from GetCompatibleUIs from %s: %s\n",
-                base_url, e.message);
-            return;
-        }
-    }
-
-    void service_proxy_available(ControlPoint control_point,
-            ServiceProxy service) {
-        service.begin_action("GetCompatibleUIs", handle_compatible_uis,
-            /* in */
-            "InputDeviceProfile", typeof(string), "",
-            "UIFilter", typeof(string), "",
-            null);
-    }
-
-    void service_proxy_unavailable(ControlPoint control_point,
-            ServiceProxy service) {
-        if (debug) {
-            stdout.printf("Service unavailable %s\n", service.udn);
-        }
-        services.unset(service.udn);
-    }
-
-    void handle_rui_request(Server server, Message message, string path,
-            HashTable? query, ClientContext context) {
+    void handle_rui_request(Soup.Server server, Soup.Message message,
+            string path, HashTable? query, Soup.ClientContext context) {
         Json.Builder builder = new Json.Builder();
         builder.begin_array();
-        foreach (Service service in services.values) {
+        foreach (var service in discoverer.services) {
             builder.begin_object();
             builder.set_member_name("id");
             builder.add_string_value(service.id);
@@ -105,17 +60,18 @@ public class RuiHttpServer {
         generator.set_root(builder.get_root());
         string data = generator.to_data(null);
         message.set_status(Soup.Status.OK);
-        message.set_response("application/json", MemoryUse.COPY, data.data);
+        message.set_response("application/json", Soup.MemoryUse.COPY, data.data);
     }
     
-    void handle_static_file(Server server, Message message, string path,
-            HashTable? query, ClientContext context) {
+    void handle_static_file(Soup.Server server, Soup.Message message,
+            string path, HashTable? query, Soup.ClientContext context) {
         server.pause_message(message);
         handle_static_file_async.begin(server, message, path, query, context);
     }
 
-    async void handle_static_file_async(Server server, Message message, string path,
-            HashTable? query, ClientContext context) {
+    async void handle_static_file_async(Soup.Server server,
+            Soup.Message message, string path, HashTable? query,
+            Soup.ClientContext context) {
         if (path == "/" || path == "") {
             path = "index.html";
         }
@@ -125,14 +81,15 @@ public class RuiHttpServer {
             var io = yield file.read_async();
             Bytes data;
             while ((data = yield io.read_bytes_async((size_t)info.get_size())).length > 0) {
-                message.response_body.append(MemoryUse.COPY, data.get_data());
+                message.response_body.append(Soup.MemoryUse.COPY,
+                    data.get_data());
             }
             string content_type = info.get_content_type();
             message.set_status(Soup.Status.OK);
             message.response_headers.set_content_type(content_type, null);
         } catch (IOError.NOT_FOUND e) {
             message.set_status(404);
-            message.set_response("text/plain", MemoryUse.COPY,
+            message.set_response("text/plain", Soup.MemoryUse.COPY,
                 ("File " + file.get_path() + " does not exist.").data);
         } catch (Error e) {
             if (debug) {
@@ -140,32 +97,17 @@ public class RuiHttpServer {
                     e.message);
             }
             message.set_status(500);
-            message.set_response("text/plain", MemoryUse.COPY, e.message.data);
+            message.set_response("text/plain", Soup.MemoryUse.COPY,
+                e.message.data);
         } finally {
             server.unpause_message(message);
         }
     }
 
     public void start() throws Error{
-        Context context = new Context(null, null, 0);
-
-        ControlPoint control_point = new ControlPoint(context,
-            "urn:schemas-upnp-org:service:RemoteUIServer:1");
-        control_point.service_proxy_available.connect(service_proxy_available);
-        control_point.service_proxy_unavailable.connect(service_proxy_unavailable);
-        control_point.set_active(true);
-
-        stdout.printf(
-            "Starting UPnP server on %s:%u\n", context.host_ip, context.port);
-
-        Server server = new Server(SERVER_PORT, port, null);
-        server.add_handler(null, handle_static_file);
-        server.add_handler("/api/remote-uis", handle_rui_request);
+        discoverer.start();
         server.run_async();
         stdout.printf("Starting HTTP server on http://localhost:%u\n",
             server.port);
-
-        MainLoop loop = new MainLoop();
-        loop.run();
     }
 }

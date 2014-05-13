@@ -22,8 +22,11 @@ static int main(string[] args) {
         return 2;
     }
     try {
-        RuiHttpServer server = new RuiHttpServer(port, debug);
+        var server = new RUI.HTTPServer(port, debug);
         server.start();
+
+        var loop = new MainLoop();
+        loop.run();
     } catch (Error e) {
         stderr.printf("Error running RuiHttpServer: %s\n", e.message);
         return 1;
