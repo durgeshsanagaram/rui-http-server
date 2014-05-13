@@ -41,11 +41,11 @@ While developing, it can be useful to leave `tup` running in the background, aut
 
 To start the HTTP server on port 8080, do:
 
-    ./server -p 8080
+    ./src/server -p 8080
 
 If you want a random point, you can do:
 
-    ./server
+    ./src/server
 
 And, the server output will say something like:
 

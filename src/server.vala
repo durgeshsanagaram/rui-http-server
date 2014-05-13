@@ -27,7 +27,7 @@ using Gee;
 using GUPnP;
 using Soup;
 
-internal class RuiHttpServer {
+public class RuiHttpServer {
 
     struct Service {
         string id;
@@ -35,20 +35,14 @@ internal class RuiHttpServer {
         string ui_listing;
     }
 
-    static int port = 0;
-    static bool debug = false;
-
-    static const OptionEntry[] options = {
-        { "port", 'p', 0, OptionArg.INT, ref port,
-            "The port to run the HTTP server on. By default, the server picks a random available port.", "[port]" },
-        { "debug", 'd', 0, OptionArg.NONE, ref debug,
-            "Print debug messages to the console", null },
-        { null }
-    };
+    int port = 0;
+    bool debug = false;
 
     Map<string, Service?> services;
 
-    RuiHttpServer() {
+    public RuiHttpServer(int port, bool debug) {
+        this.port = port;
+        this.debug = debug;
         services = new HashMap<string, Service?>();
     }
 
@@ -152,7 +146,7 @@ internal class RuiHttpServer {
         }
     }
 
-    void start() throws Error{
+    public void start() throws Error{
         Context context = new Context(null, null, 0);
 
         ControlPoint control_point = new ControlPoint(context,
@@ -173,27 +167,5 @@ internal class RuiHttpServer {
 
         MainLoop loop = new MainLoop();
         loop.run();
-    }
-
-    static int main(string[] args) {
-        try {
-            var opt_context = new OptionContext("RUI Discovery Server");
-            opt_context.set_help_enabled (true);
-            opt_context.add_main_entries (options, null);
-            opt_context.parse (ref args);
-        } catch (OptionError e) {
-            stderr.printf ("%s\n", e.message);
-            stderr.printf ("Run '%s --help' to see a full list of available command line options.\n",
-                args[0]);
-            return 2;
-        }
-        try {
-            RuiHttpServer server = new RuiHttpServer();
-            server.start();
-        } catch (Error e) {
-            stderr.printf("Error running RuiHttpServer: %s\n", e.message);
-            return 1;
-        }
-        return 0;
     }
 }
