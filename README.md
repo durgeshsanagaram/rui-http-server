@@ -24,8 +24,13 @@
 
 ## Get Source
 
-    git clone https://github.com/cablelabs/rui-http-server.git
+    git clone https://github.com/cablelabs/rui-http-server.git --recursive
     cd rui-http-server
+
+If you previously downloaded without `--recursive`, you can checkout the submodule with:
+
+    git submodule init
+    git submodule update
 
 ## Build
 
