@@ -24,9 +24,12 @@ html:after {
 
 .rui-number {
     background-image: url(../images/element-number-background.png);
-    width: 65px;
-    height: 86px;
-    line-height: 86px;
+    background-position: 50%;
+    background-repeat: no-repeat;
+    width: 41px;
+    height: 41px;
+    margin-top: 22px;
+    line-height: 41px;
     float: left;
     text-align: center;
 }
@@ -37,7 +40,6 @@ html:after {
 
 .rui {
     clear: both;
-    width: 734px;
     overflow: auto;
 }
 
@@ -61,7 +63,7 @@ html:after {
     width:622px;
     height:60px;
     float: left;
-    margin-left: 10px;
+    margin-left: 22px;
     padding: 13px 6px;
 }
 
@@ -86,10 +88,13 @@ html:after {
     margin: 0;
     position: absolute;
     bottom: 22%;
-    top: 38px;
-    left: 0px;
+    top: 58px;
+    left: 50%;
     right: 0px;
     overflow: auto;
+    width: 697px;
+    margin-left: -348px;
+    padding: 0;
 }
 
 header.main-header, footer.main-footer {
@@ -103,5 +108,5 @@ header.main-header {
     background-image: url(../images/header-background.png);
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    padding-left: 80px;
+    text-align: center;
 }
