@@ -41,6 +41,7 @@ html:after {
 .rui {
     clear: both;
     overflow: auto;
+    width: 697px;
 }
 
 .rui-icon {
@@ -92,7 +93,6 @@ html:after {
     left: 50%;
     right: 0px;
     overflow: auto;
-    width: 697px;
     margin-left: -348px;
     padding: 0;
 }
