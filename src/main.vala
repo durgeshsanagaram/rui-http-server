@@ -34,6 +34,11 @@ static const OptionEntry[] options = {
     { null }
 };
 
+static MainLoop loop;
+static void safe_exit(int signal) {
+    loop.quit();
+}
+
 static int main(string[] args) {
     try {
         var opt_context = new OptionContext("RUI Discovery Server");
@@ -50,7 +55,10 @@ static int main(string[] args) {
         var server = new RUI.HTTPServer(port, debug);
         server.start();
 
-        var loop = new MainLoop();
+        loop = new MainLoop();
+        Posix.signal(Posix.SIGINT, safe_exit);
+        Posix.signal(Posix.SIGHUP, safe_exit);
+        Posix.signal(Posix.SIGTERM, safe_exit);
         loop.run();
     } catch (Error e) {
         stderr.printf("Error running RuiHttpServer: %s\n", e.message);
