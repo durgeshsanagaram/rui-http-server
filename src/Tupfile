@@ -1,6 +1,6 @@
 include_rules
 
 LIBRUI_DISCOVERER_DIR = $(TUP_CWD)/../deps/librui-discoverer/src
-VALA_FLAGS += --vapidir=$(LIBRUI_DISCOVERER_DIR) --includedir=$(LIBRUI_DISCOVERER_DIR) -X -I$(LIBRUI_DISCOVERER_DIR) -X $(LIBRUI_DISCOVERER_DIR)/librui-discoverer.o --pkg=rui-discoverer
+VALA_FLAGS += --vapidir=$(LIBRUI_DISCOVERER_DIR) --includedir=$(LIBRUI_DISCOVERER_DIR) -X -I$(LIBRUI_DISCOVERER_DIR) -X $(LIBRUI_DISCOVERER_DIR)/librui-discoverer.o --pkg=rui-discoverer-1.0
 
 : *.vala | $(LIBRUI_DISCOVERER_DIR)/*.vapi $(LIBRUI_DISCOVERER_DIR)/*.h $(LIBRUI_DISCOVERER_DIR)/*.o |> !vala |> server
