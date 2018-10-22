@@ -30,7 +30,7 @@ static const OptionEntry[] options = {
     { "port", 'p', 0, OptionArg.INT, ref port,
         "The port to run the HTTP server on. By default, the server picks a random available port.", "[port]" },
     { "debug", 'd', 0, OptionArg.NONE, ref debug,
-        "Print debug messages to the ...console", null },
+        "Print debug messages to the ......console", null },
     { null }
 };
 
